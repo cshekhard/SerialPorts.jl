@@ -83,6 +83,29 @@ function Base.write(serialport::SerialPort, data::SerialString)
     serialport.python_ptr[:write](data)
 end
 
+function Base.write(serialport::SerialPort, data::UTF8String)
+    bytes = encode(data,"UTF-8")
+    if sizeof(bytes) == length(data)
+        serialport.python_ptr[:write](bytes)
+    else
+        i = 1
+        a = Array(Int64,1)
+        while i <= sizeof(data)
+            if sizeof(string(data[i:i])) == 2
+                if bytes[i] == 195 bytes[i+1] = bytes[i+1]+64  end
+            push!(a,i+1)
+            i = i+2
+            else
+                push!(a,i)
+                i = i+1
+            end
+        end
+        a = a[2:end]
+        bytes = bytes[a]
+        serialport.python_ptr[:write](bytes)
+    end
+end
+
 function Base.read(ser::SerialPort, bytes::Integer)
     ser.python_ptr[:read](bytes)
 end
